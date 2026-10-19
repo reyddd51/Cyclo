@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fff3f5">
+<meta name="theme-color" content="#fbefeb">
 <meta name="color-scheme" content="light only">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,7 +25,12 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;color:var(--ink);background:var(--bg);
   font:16px/1.4 ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif}
-body{background:linear-gradient(180deg,#ffe9ee 0,#fff7f8 340px) no-repeat,var(--bg)}
+body{background:
+  radial-gradient(60% 40% at 100% 8%,#f6dcd6 0,transparent 70%),
+  radial-gradient(55% 35% at 0% 32%,#f7e1dc 0,transparent 70%),
+  radial-gradient(70% 40% at 90% 52%,#f9e8e3 0,transparent 70%),
+  linear-gradient(180deg,#fbefeb 0,#fbf2ef 60%,#fdf7f5 100%) fixed;
+  background-attachment:fixed}
 button{font:inherit;color:inherit}
 main{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 96px)}
 h1{font-size:30px;margin:6px 0 14px;letter-spacing:-.6px;font-weight:800}
@@ -36,39 +41,42 @@ h2{font-size:18px;margin:0 0 12px;font-weight:700}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* --- en-tête accueil + bande semaine --- */
-.top{display:flex;justify-content:space-between;align-items:center;margin:4px 2px 12px}
-.top .date{font-weight:700;font-size:17px}
-.avatar{width:38px;height:38px;border-radius:50%;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:18px;border:0}
-.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:18px}
-.wd{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;padding:0}
-.wd small{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase}
-.wd span{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;position:relative}
+.top{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin:2px 0 14px}
+.top .date{text-align:center;font-size:19px;font-weight:500}
+.avatar,.calbtn{width:44px;height:44px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;padding:0}
+.avatar{background:var(--pink);color:#fff;font-size:20px}
+.calbtn{background:none}
+.calbtn svg{width:30px;height:30px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:none;padding:0}
+.wd small{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase}
+.wd span{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:19px}
+.wd.today small{color:var(--ink);font-weight:700}
+.wd.today span{background:rgba(45,31,42,.08);font-weight:700}
 .wd.period span{background:var(--pink);color:#fff}
-.wd.pred span{border:2px dashed var(--pink-mid);color:var(--pink)}
-.wd.fertile span{background:var(--teal-soft);color:#1f8f9a}
-.wd.ovu span{background:var(--teal);color:#fff}
-.wd.today small{color:var(--ink)}
-.wd.today span::after{content:"";position:absolute;bottom:-7px;width:5px;height:5px;border-radius:50%;background:var(--ink)}
+.wd.pred span{border:2px dotted var(--pink);color:var(--pink)}
+.wd.fertile span{color:#1f9aa6}
+.wd.ovu span{border:2px dotted var(--teal);color:#1f9aa6}
 
-/* --- cercle principal --- */
-.hero{position:relative;width:min(300px,82vw);aspect-ratio:1;margin:0 auto 22px;border-radius:50%;
-  background:radial-gradient(circle at 30% 25%,#ffd1dc 0,#ffb3c4 45%,#ff97ad 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;
-  box-shadow:0 18px 40px rgba(255,92,138,.28),inset 0 -10px 30px rgba(255,255,255,.18)}
-.hero.period{background:radial-gradient(circle at 30% 25%,#ff9fb5 0,#ff6f91 50%,#ff5c7a 100%)}
-.hero.fertile{background:radial-gradient(circle at 30% 25%,#a9e7ec 0,#6fd0d8 50%,#3fb8c4 100%);box-shadow:0 18px 40px rgba(63,184,196,.30)}
-.hero::before{content:"";position:absolute;inset:-12px;border-radius:50%;border:2px solid rgba(255,140,165,.25)}
-.hero.fertile::before{border-color:rgba(63,184,196,.25)}
-.hero .kicker{font-size:16px;font-weight:600;opacity:.95}
-.hero .big{font-size:56px;font-weight:800;letter-spacing:-1.5px;line-height:1.05;margin:2px 0}
-.hero .sub{font-size:14px;opacity:.95;padding:0 34px;min-height:20px}
-.hero .pill{margin-top:16px;border:0;background:#fff;color:var(--pink);font-weight:700;font-size:15px;padding:12px 22px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-.hero.fertile .pill{color:#1f8f9a}
+/* --- statut principal --- */
+.hero{text-align:center;padding:56px 10px 40px}
+.hero .kicker{font-size:21px;font-weight:700}
+.hero .big{font-size:64px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin:14px 0 18px}
+.hero.period .big{color:var(--pink)}
+.hero.fertile .big{color:#1f9aa6}
+.hero .sub{font-size:17px;color:#4a3a44;min-height:24px}
+.actions{display:flex;justify-content:space-around;margin:0 0 30px}
+.act{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:10px;width:110px;font-size:15px;line-height:1.3;color:var(--ink)}
+.act i{width:62px;height:62px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(45,31,42,.08)}
+.act i svg{width:28px;height:28px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.act.main i{background:var(--pink)}
+.act.main i svg{stroke:#fff}
+.act:active i{transform:scale(.94)}
 
 /* --- ma journée --- */
 .dayrow{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .dayrow::-webkit-scrollbar{display:none}
-.add{flex:0 0 auto;width:86px;height:104px;border-radius:20px;border:0;background:linear-gradient(160deg,var(--pink),var(--pink2));color:#fff;
+.add{flex:0 0 auto;width:86px;height:104px;border-radius:20px;border:2px dashed var(--pink-mid);background:#fff;color:var(--pink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:13px}
 .add b{font-size:28px;line-height:1;font-weight:500}
 .logged{flex:0 0 auto;width:86px;height:104px;border-radius:20px;background:var(--pink-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;text-align:center;padding:6px;border:0}
@@ -141,7 +149,7 @@ nav{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) 
   border-radius:26px;box-shadow:0 8px 30px rgba(45,31,42,.12);display:flex;padding:8px;z-index:5}
 nav button{flex:1;border:0;background:none;color:var(--muted);font-size:11px;font-weight:700;padding:6px 0;border-radius:18px;display:flex;flex-direction:column;align-items:center;gap:3px}
 nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-nav button.on{color:var(--pink);background:var(--pink-soft)}
+nav button.on{color:var(--ink)}
 
 /* --- fiche du jour --- */
 .veil{position:fixed;inset:0;background:rgba(45,31,42,.30);opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
@@ -170,15 +178,22 @@ textarea{width:100%;min-height:80px;border:0;border-radius:16px;padding:12px;fon
 <main>
   <!-- ACCUEIL -->
   <section class="view on" id="v-today">
-    <div class="top"><div><div class="muted">Aujourd'hui</div><div class="date" id="todayTitle"></div></div>
-      <button class="avatar" id="goSet" aria-label="Réglages">🌸</button></div>
+    <div class="top">
+      <button class="avatar" id="goSet" aria-label="Réglages">🌸</button>
+      <div class="date" id="todayTitle"></div>
+      <button class="calbtn" id="goCal" aria-label="Calendrier"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" stroke-width="2.6"/></svg></button>
+    </div>
     <div class="week" id="week"></div>
 
     <div class="hero" id="ring">
       <div class="kicker" id="ringKick">Bienvenue</div>
-      <div class="big" id="ringBig">–</div>
+      <div class="big" id="ringBig">🌸</div>
       <div class="sub" id="ringLbl">Note tes dernières règles pour commencer</div>
-      <button class="pill" id="quickPeriod">Noter mes règles</button>
+    </div>
+    <div class="actions">
+      <button class="act main" id="quickPeriod"><i><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></i><span id="qpLabel">Enregistrer les règles</span></button>
+      <button class="act" id="actSym"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i>Symptômes</button>
+      <button class="act" id="actMood"><i><svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 22l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></i>Humeur</button>
     </div>
 
     <div class="card">
@@ -330,22 +345,22 @@ function renderToday(){
   const w=$('week');w.innerHTML='';const mon=addDays(t,-((t.getDay()+6)%7));
   for(let i=0;i<7;i++){const d=addDays(mon,i),k=iso(d);const b=document.createElement('button');
     b.className='wd '+cls(k,pr,tk)+(k===tk?' today':'');
-    b.innerHTML=`<small>${fmt(d,{weekday:'short'}).slice(0,3)}</small><span>${d.getDate()}</span>`;b.onclick=()=>openSheet(k);w.appendChild(b)}
+    b.innerHTML=`<small>${k===tk?'Auj.':'LMMJVSD'[i]}</small><span>${d.getDate()}</span>`;b.onclick=()=>openSheet(k);w.appendChild(b)}
   // cercle
   const ring=$('ring');ring.className='hero';const qb=$('quickPeriod');
-  if(!p.length){$('ringKick').textContent='Bienvenue';$('ringBig').textContent='🌸';$('ringLbl').textContent='Note tes dernières règles pour commencer';qb.textContent='Noter mes règles';qb.dataset.mode='start'}
+  if(!p.length){$('ringKick').textContent='Bienvenue';$('ringBig').textContent='🌸';$('ringLbl').textContent='Note tes dernières règles pour commencer';$('qpLabel').textContent='Enregistrer les règles';qb.dataset.mode='start'}
   else{
     const last=p[p.length-1],day=diff(last.start,t)+1;
     const inPeriod=diff(last.end,t)<=0||isBleed(db.days[tk]);
     if(inPeriod){ring.classList.add('period');$('ringKick').textContent='Règles';$('ringBig').textContent='Jour '+day;
-      $('ringLbl').textContent='Pense à t\'hydrater et à te reposer';qb.textContent='Mes règles sont finies';qb.dataset.mode='end'}
+      $('ringLbl').textContent='Prévues jusqu\'au '+fmt(addDays(last.start,Math.max(avgP,diff(last.start,last.end)+1)-1),{day:'numeric',month:'long'});$('qpLabel').textContent='Fin des règles';qb.dataset.mode='end'}
     else{
-      const until=diff(t,pr.next);qb.textContent='Mes règles ont commencé';qb.dataset.mode='start';
+      const until=diff(t,pr.next);$('qpLabel').textContent='Enregistrer les règles';qb.dataset.mode='start';
       if(day>avgC+2){$('ringKick').textContent='Retard';$('ringBig').textContent=(day-avgC)+' j';$('ringLbl').textContent='Jour '+day+' du cycle'}
       else{$('ringKick').textContent=until===0?'Règles prévues':'Règles dans';$('ringBig').textContent=until===0?'Aujourd\'hui':until+(until>1?' jours':' jour');
         if(pr.ovu.has(tk)){ring.classList.add('fertile');$('ringLbl').textContent='Jour d\'ovulation estimé'}
         else if(pr.fert.has(tk)){ring.classList.add('fertile');$('ringLbl').textContent='Fenêtre fertile · jour '+day}
-        else $('ringLbl').textContent='Jour '+day+' du cycle'}
+        else $('ringLbl').textContent='Hors fenêtre fertile · jour '+day}
     }
   }
   // ma journée
@@ -467,6 +482,9 @@ function show(v){document.querySelectorAll('nav button').forEach(x=>x.classList.
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('goSet').onclick=()=>show('set');
+$('goCal').onclick=()=>show('cal');
+$('actSym').onclick=()=>openSheet(iso(today()));
+$('actMood').onclick=()=>{openSheet(iso(today()));setTimeout(()=>$('moodChips').parentNode.scrollIntoView({behavior:'smooth',block:'start'}),320)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
 
 renderAll();
