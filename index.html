@@ -470,7 +470,11 @@ $('goSet').onclick=()=>show('set');
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
 
 renderAll();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+  const had=!!navigator.serviceWorker.controller;let done=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!done){done=true;location.reload()}});
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+}
 </script>
 </body>
 </html>
