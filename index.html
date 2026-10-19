@@ -101,22 +101,35 @@ h2{font-size:18px;margin:0 0 12px;font-weight:700}
 .tile.p i{background:var(--pink-soft)}.tile.t i{background:var(--teal-soft)}.tile.v i{background:var(--violet-soft)}
 .note{font-size:12px;color:var(--muted);text-align:center;margin:4px 12px 0}
 
-/* --- calendrier --- */
-.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.calhead b{font-size:18px}
-.calhead button{border:0;background:var(--pink-soft);color:var(--pink);width:38px;height:38px;border-radius:50%;font-size:20px;font-weight:700}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px 2px}
-.dow{font-size:12px;color:var(--muted);text-align:center;font-weight:700;padding-bottom:4px}
-.day{aspect-ratio:1;max-width:44px;width:100%;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
-  font-size:15px;font-weight:600;border:0;background:transparent;padding:0}
-.day.out{opacity:.28}
-.day.period{background:var(--pink);color:#fff}
-.day.pred{border:2px dashed var(--pink-mid);color:var(--pink)}
-.day.fertile{background:var(--teal-soft);color:#1f8f9a}
-.day.ovu{background:var(--teal);color:#fff}
-.day.today{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
-.day .dot{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--violet)}
-.day.period .dot,.day.ovu .dot{background:#fff}
+/* --- calendrier défilant --- */
+.calbar{position:sticky;top:0;z-index:4;margin:0 -16px;padding:calc(env(safe-area-inset-top) + 8px) 16px 6px;
+  background:rgba(251,239,235,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #eedcd7}
+.calbar .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calbar h1{margin:0;font-size:26px}
+.todaybtn{border:0;background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;box-shadow:0 2px 8px rgba(45,31,42,.08)}
+.dows{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:13px;color:var(--muted);font-weight:500}
+.month{padding:18px 0 6px;border-bottom:1px solid #eedcd7}
+.month h3{text-align:center;font-size:20px;margin:0 0 10px;font-weight:800}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.cd{border:0;background:none;padding:0;height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.cd small{height:13px;font-size:11px;font-weight:800;letter-spacing:.3px}
+.cd span{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;transition:transform .12s}
+.cd:active span{transform:scale(.9)}
+.cd i{width:7px;height:7px;border-radius:50%;background:transparent}
+.cd i.on{background:#bdb2b6}
+.cd.period span{background:var(--pink);color:#fff}
+.cd.pred span{border:2px dotted var(--pink);color:var(--pink)}
+.cd.fertile span{color:#1f9aa6}
+.cd.ovu span{border:2px dotted var(--teal);color:#1f9aa6}
+.cd.today span{font-weight:800}
+.cd.future{cursor:default}
+.calhint{text-align:center;font-size:13px;color:var(--muted);margin:14px 10px 4px;line-height:1.5}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 92px);max-width:488px;margin:0 auto;z-index:8;
+  background:var(--ink);color:#fff;border-radius:18px;padding:13px 16px;display:flex;align-items:center;gap:12px;font-size:15px;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);transform:translateY(20px);opacity:0;pointer-events:none;transition:.25s}
+.toast.on{transform:none;opacity:1;pointer-events:auto}
+.toast span{flex:1}
+.toast button{border:0;background:none;color:#ff9db8;font-weight:800;font-size:15px;padding:0}
 .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:16px;font-size:13px;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-2px}
 .lg-p::before{background:var(--pink)}.lg-pr::before{border:2px dashed var(--pink-mid);width:8px!important;height:8px!important}
@@ -216,13 +229,12 @@ textarea{width:100%;min-height:80px;border:0;border-radius:16px;padding:12px;fon
 
   <!-- CALENDRIER -->
   <section class="view" id="v-cal">
-    <h1>Calendrier</h1>
-    <div class="card">
-      <div class="calhead"><button id="prevM" aria-label="Mois précédent">‹</button><b id="mLabel"></b><button id="nextM" aria-label="Mois suivant">›</button></div>
-      <div class="grid" id="grid"></div>
-      <div class="legend"><span class="lg-p">Règles</span><span class="lg-pr">Prévues</span><span class="lg-f">Fertile</span><span class="lg-o">Ovulation</span><span class="lg-n">Note</span></div>
+    <div class="calbar">
+      <div class="row1"><h1>Calendrier</h1><button class="todaybtn" id="toToday">Aujourd'hui</button></div>
+      <div class="dows"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
     </div>
-    <p class="note">Touche un jour pour noter tes règles, symptômes ou humeur</p>
+    <div id="months"></div>
+    <p class="calhint">Touche un jour : début des règles (7 jours remplis).<br>Touche un jour de règles : fin des règles ce jour-là.<br>Appui long : noter symptômes et humeur.</p>
   </section>
 
   <!-- CYCLES -->
@@ -263,6 +275,7 @@ textarea{width:100%;min-height:80px;border:0;border-radius:16px;padding:12px;fon
   <button data-v="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Réglages</button>
 </nav>
 
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="undoBtn">Annuler</button></div>
 <div class="veil" id="veil"></div>
 <div class="sheet" id="sheet">
   <div class="grab"></div>
@@ -386,19 +399,68 @@ function renderToday(){
 }
 
 // ---------- calendrier ----------
-let calMonth=new Date(today().getFullYear(),today().getMonth(),1);
 function renderCal(){
-  const g=$('grid');g.innerHTML='';
-  ['L','M','M','J','V','S','D'].forEach(d=>g.insertAdjacentHTML('beforeend',`<div class="dow">${d}</div>`));
-  $('mLabel').textContent=cap(fmt(calMonth,{month:'long',year:'numeric'}));
-  const pr=predictions(8),t=iso(today());let d=addDays(calMonth,-((calMonth.getDay()+6)%7));
-  for(let i=0;i<42;i++){
-    const k=iso(d),e=db.days[k],b=document.createElement('button');
-    b.className='day '+cls(k,pr,t)+(d.getMonth()!==calMonth.getMonth()?' out':'')+(k===t?' today':'');b.textContent=d.getDate();
-    if(hasNote(e))b.insertAdjacentHTML('beforeend','<span class="dot"></span>');
-    b.onclick=()=>openSheet(k);g.appendChild(b);d=addDays(d,1);
+  const box=$('months');box.innerHTML='';const pr=predictions(8),T=today(),t=iso(T);
+  const{p}=stats();
+  let first=new Date(T.getFullYear(),T.getMonth()-12,1);
+  if(p.length&&p[0].start<first)first=new Date(p[0].start.getFullYear(),p[0].start.getMonth(),1);
+  const last=new Date(T.getFullYear(),T.getMonth()+6,1);
+  for(let m=new Date(first);m<=last;m=new Date(m.getFullYear(),m.getMonth()+1,1)){
+    const sec=document.createElement('div');sec.className='month';
+    if(m.getFullYear()===T.getFullYear()&&m.getMonth()===T.getMonth())sec.id='curMonth';
+    const yr=m.getFullYear()!==T.getFullYear()?' '+m.getFullYear():'';
+    sec.innerHTML=`<h3>${cap(fmt(m,{month:'long'}))}${yr}</h3>`;
+    const g=document.createElement('div');g.className='mgrid';
+    const off=(m.getDay()+6)%7;for(let i=0;i<off;i++)g.appendChild(document.createElement('div'));
+    const n=new Date(m.getFullYear(),m.getMonth()+1,0).getDate();
+    for(let d=1;d<=n;d++){
+      const k=iso(new Date(m.getFullYear(),m.getMonth(),d)),e=db.days[k];
+      const b=document.createElement('button');
+      b.className='cd '+cls(k,pr,t)+(k===t?' today':'')+(k>t?' future':'');
+      b.innerHTML=`<small>${k===t?'AUJ.':''}</small><span>${d}</span><i class="${hasNote(e)?'on':''}"></i>`;
+      bindDay(b,k);g.appendChild(b);
+    }
+    sec.appendChild(g);box.appendChild(sec);
   }
 }
+function scrollToToday(smooth){const c=$('curMonth');if(!c)return;
+  const y=c.getBoundingClientRect().top+window.scrollY-110;window.scrollTo({top:Math.max(0,y),behavior:smooth?'smooth':'auto'})}
+// toucher = règles, appui long = fiche du jour
+function bindDay(b,k){
+  let timer=null,long=false,moved=false,sx=0,sy=0;
+  b.addEventListener('pointerdown',ev=>{long=false;moved=false;sx=ev.clientX;sy=ev.clientY;
+    timer=setTimeout(()=>{long=true;if(navigator.vibrate)navigator.vibrate(10);openSheet(k)},480)});
+  b.addEventListener('pointermove',ev=>{if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>10){moved=true;clearTimeout(timer)}});
+  ['pointerup','pointercancel','pointerleave'].forEach(n=>b.addEventListener(n,()=>clearTimeout(timer)));
+  b.addEventListener('contextmenu',ev=>ev.preventDefault());
+  b.addEventListener('click',()=>{if(long||moved)return;tapDay(k)});
+}
+function blank(e){return !e.flow&&!(e.sym||[]).length&&!(e.mood||[]).length&&!e.note}
+function setFlow(k,f){const e=db.days[k]||{sym:[],mood:[],note:''};if(f)e.flow=f;else delete e.flow;if(blank(e))delete db.days[k];else db.days[k]=e}
+let undoSnap=null;
+function tapDay(k){
+  const t=iso(today());
+  if(k>t){toast('Tu pourras noter ce jour quand il sera arrivé');return}
+  undoSnap=JSON.stringify(db.days);
+  const P=periods().find(x=>iso(x.start)<=k&&k<=iso(x.end));
+  if(P){
+    if(k===iso(P.start)){ // premier jour : on retire ces règles
+      for(let d=P.start;d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
+      toast('Règles du '+fmt(P.start,{day:'numeric',month:'long'})+' retirées');
+    }else{ // un autre jour : les règles finissent ce jour-là
+      for(let d=addDays(parse(k),1);d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
+      toast('Fin des règles le '+fmt(parse(k),{day:'numeric',month:'long'}));
+    }
+  }else{
+    const n=+db.settings.period||7;
+    for(let i=0;i<n;i++){const d=iso(addDays(parse(k),i));if(!isBleed(db.days[d]))setFlow(d,i<3?'medium':'light')}
+    toast('Règles du '+fmt(parse(k),{day:'numeric',month:'short'})+' au '+fmt(addDays(parse(k),n-1),{day:'numeric',month:'short'}));
+  }
+  save();renderAll();
+}
+let toastT=null;
+function toast(msg){const el=$('toast');$('toastMsg').textContent=msg;$('undoBtn').style.display=undoSnap?'':'none';
+  el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>{el.classList.remove('on');undoSnap=null},4000)}
 // ---------- cycles ----------
 function renderHist(){
   const{p,avgC,avgP,cycles}=stats();
@@ -455,8 +517,6 @@ $('quickPeriod').onclick=()=>{
   }
   save();renderAll();
 };
-$('prevM').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderCal()};
-$('nextM').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderCal()};
 
 // ---------- réglages ----------
 document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{
@@ -479,10 +539,12 @@ $('resetBtn').onclick=()=>{if(confirm('Effacer toutes tes données ? Pense à ex
 
 // ---------- onglets ----------
 function show(v){document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
-  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0)}
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0);if(v==='cal')requestAnimationFrame(()=>scrollToToday(false))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('goSet').onclick=()=>show('set');
 $('goCal').onclick=()=>show('cal');
+$('toToday').onclick=()=>scrollToToday(true);
+$('undoBtn').onclick=()=>{if(undoSnap){db.days=JSON.parse(undoSnap);undoSnap=null;save();renderAll()}$('toast').classList.remove('on')};
 $('actSym').onclick=()=>openSheet(iso(today()));
 $('actMood').onclick=()=>{openSheet(iso(today()));setTimeout(()=>$('moodChips').parentNode.scrollIntoView({behavior:'smooth',block:'start'}),320)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
