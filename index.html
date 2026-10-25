@@ -47,7 +47,11 @@ h2{font-size:18px;margin:0 0 12px;font-weight:700}
 .avatar{background:var(--pink);color:#fff;font-size:20px}
 .calbtn{background:none}
 .calbtn svg{width:30px;height:30px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.week{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px}
+.week{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px 8px;overscroll-behavior-x:contain}
+.week::-webkit-scrollbar{display:none}
+.wk{flex:0 0 100%;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 16px;scroll-snap-align:start;scroll-snap-stop:always}
+.top .date{cursor:pointer}
+.top .date.away{color:var(--pink)}
 .wd{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:none;padding:0}
 .wd small{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase}
 .wd span{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:19px}
@@ -351,14 +355,24 @@ function cls(k,pr,t){const e=db.days[k];
   if(isBleed(e))return'period';if(k>t&&pr.per.has(k))return'pred';if(pr.ovu.has(k))return'ovu';if(pr.fert.has(k))return'fertile';return''}
 
 // ---------- accueil ----------
+const WEEKS=12;let weekIdx=WEEKS;
+function weekTitle(){const t=today(),el=$('todayTitle');
+  if(weekIdx===WEEKS){el.textContent=cap(fmt(t,{weekday:'long',day:'numeric',month:'long'}));el.classList.remove('away')}
+  else{const thu=addDays(t,-((t.getDay()+6)%7)+7*(weekIdx-WEEKS)+3);
+    el.textContent=cap(fmt(thu,{month:'long',year:thu.getFullYear()!==t.getFullYear()?'numeric':undefined}));el.classList.add('away')}}
+function placeWeek(smooth){const w=$('week');if(w.clientWidth)w.scrollTo({left:weekIdx*w.clientWidth,behavior:smooth?'smooth':'auto'});weekTitle()}
 function renderToday(){
   const t=today(),tk=iso(t);const{p,avgC,avgP}=stats();const pr=predictions();
-  $('todayTitle').textContent=cap(fmt(t,{weekday:'long',day:'numeric',month:'long'}));
-  // semaine
-  const w=$('week');w.innerHTML='';const mon=addDays(t,-((t.getDay()+6)%7));
-  for(let i=0;i<7;i++){const d=addDays(mon,i),k=iso(d);const b=document.createElement('button');
-    b.className='wd '+cls(k,pr,tk)+(k===tk?' today':'');
-    b.innerHTML=`<small>${k===tk?'Auj.':'LMMJVSD'[i]}</small><span>${d.getDate()}</span>`;b.onclick=()=>openSheet(k);w.appendChild(b)}
+  
+  // bande des jours : 12 semaines avant, 12 après, défilable
+  const w=$('week');const keep=w.children.length?weekIdx:WEEKS;w.innerHTML='';
+  const mon0=addDays(t,-((t.getDay()+6)%7)-7*WEEKS);
+  for(let wi=0;wi<=2*WEEKS;wi++){const pg=document.createElement('div');pg.className='wk';
+    for(let i=0;i<7;i++){const d=addDays(mon0,wi*7+i),k=iso(d);const b=document.createElement('button');
+      b.className='wd '+cls(k,pr,tk)+(k===tk?' today':'');
+      b.innerHTML=`<small>${k===tk?'Auj.':'LMMJVSD'[i]}</small><span>${d.getDate()}</span>`;b.onclick=()=>openSheet(k);pg.appendChild(b)}
+    w.appendChild(pg)}
+  weekIdx=keep;placeWeek();
   // cercle
   const ring=$('ring');ring.className='hero';const qb=$('quickPeriod');
   if(!p.length){$('ringKick').textContent='Bienvenue';$('ringBig').textContent='🌸';$('ringLbl').textContent='Note tes dernières règles pour commencer';$('qpLabel').textContent='Enregistrer les règles';qb.dataset.mode='start'}
@@ -539,10 +553,13 @@ $('resetBtn').onclick=()=>{if(confirm('Effacer toutes tes données ? Pense à ex
 
 // ---------- onglets ----------
 function show(v){document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
-  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0);if(v==='cal')requestAnimationFrame(()=>scrollToToday(false))}
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0);if(v==='cal')requestAnimationFrame(()=>scrollToToday(false));if(v==='today')requestAnimationFrame(()=>placeWeek())}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('goSet').onclick=()=>show('set');
 $('goCal').onclick=()=>show('cal');
+$('week').addEventListener('scroll',()=>{const w=$('week');if(!w.clientWidth)return;const i=Math.round(w.scrollLeft/w.clientWidth);if(i!==weekIdx){weekIdx=i;weekTitle()}},{passive:true});
+$('todayTitle').onclick=()=>{weekIdx=WEEKS;placeWeek(true)};
+window.addEventListener('resize',()=>placeWeek());
 $('toToday').onclick=()=>scrollToToday(true);
 $('undoBtn').onclick=()=>{if(undoSnap){db.days=JSON.parse(undoSnap);undoSnap=null;save();renderAll()}$('toast').classList.remove('on')};
 $('actSym').onclick=()=>openSheet(iso(today()));
