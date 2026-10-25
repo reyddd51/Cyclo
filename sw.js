@@ -1,7 +1,7 @@
 // Garde l'app sur le téléphone pour qu'elle marche sans internet.
 // Avec du réseau : on charge la dernière version (et on met à jour la copie).
 // Sans réseau : on utilise la copie enregistrée.
-const CACHE = 'cycle-v7';
+const CACHE = 'cycle-v8';
 const FILES = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

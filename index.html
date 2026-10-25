@@ -110,6 +110,12 @@ h2{font-size:18px;margin:0 0 12px;font-weight:700}
   background:rgba(251,239,235,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #eedcd7}
 .calbar .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .calbar h1{margin:0;font-size:22px}
+.pickbar{display:none;align-items:center;gap:10px;background:var(--pink);color:#fff;border-radius:16px;padding:11px 14px;margin:2px 0 10px;font-weight:700;font-size:15px}
+.pickbar span{flex:1}
+.pickbar button{border:0;background:rgba(255,255,255,.22);color:#fff;border-radius:999px;padding:7px 12px;font-weight:700;font-size:14px}
+body.picking .pickbar{display:flex}
+body.picking .cd.future{opacity:.3}
+body.picking nav{display:none}
 .todaybtn{border:0;background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;box-shadow:0 2px 8px rgba(45,31,42,.08)}
 .dows{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:13px;color:var(--muted);font-weight:500}
 .month{padding:12px 0 4px;border-bottom:1px solid #eedcd7}
@@ -234,6 +240,7 @@ textarea{width:100%;min-height:80px;border:0;border-radius:16px;padding:12px;fon
   <!-- CALENDRIER -->
   <section class="view" id="v-cal">
     <div class="calbar">
+      <div class="pickbar" id="pickbar"><span id="pickMsg"></span><button id="pickCancel">Annuler</button></div>
       <div class="row1"><h1>Calendrier</h1><button class="todaybtn" id="toToday">Aujourd'hui</button></div>
       <div class="dows"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
     </div>
@@ -443,11 +450,11 @@ function scrollToToday(smooth){const c=$('curMonth');if(!c)return;
 function bindDay(b,k){
   let timer=null,long=false,moved=false,sx=0,sy=0;
   b.addEventListener('pointerdown',ev=>{long=false;moved=false;sx=ev.clientX;sy=ev.clientY;
-    timer=setTimeout(()=>{long=true;if(navigator.vibrate)navigator.vibrate(10);openSheet(k)},480)});
+    timer=setTimeout(()=>{if(pickMode)return;long=true;if(navigator.vibrate)navigator.vibrate(10);openSheet(k)},480)});
   b.addEventListener('pointermove',ev=>{if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>10){moved=true;clearTimeout(timer)}});
   ['pointerup','pointercancel','pointerleave'].forEach(n=>b.addEventListener(n,()=>clearTimeout(timer)));
   b.addEventListener('contextmenu',ev=>ev.preventDefault());
-  b.addEventListener('click',()=>{if(long||moved)return;tapDay(k)});
+  b.addEventListener('click',()=>{if(long||moved)return;if(pickMode)pickDay(k);else tapDay(k)});
 }
 function blank(e){return !e.flow&&!(e.sym||[]).length&&!(e.mood||[]).length&&!e.note}
 function setFlow(k,f){const e=db.days[k]||{sym:[],mood:[],note:''};if(f)e.flow=f;else delete e.flow;if(blank(e))delete db.days[k];else db.days[k]=e}
@@ -521,16 +528,30 @@ $('saveDay').onclick=()=>{draft.note=$('note').value.trim();
 $('closeSheet').onclick=closeSheet;$('veil').onclick=closeSheet;
 
 // ---------- règles en un geste ----------
-$('quickPeriod').onclick=()=>{
-  const t=today(),k=iso(t);const{avgP}=stats();
-  if($('quickPeriod').dataset.mode==='end'){
-    Object.keys(db.days).forEach(d=>{if(d>k&&isBleed(db.days[d])){const e=db.days[d];delete e.flow;if(!(e.sym||[]).length&&!(e.mood||[]).length&&!e.note)delete db.days[d]}});
-    if(!isBleed(db.days[k]))db.days[k]=Object.assign({sym:[],mood:[],note:''},db.days[k],{flow:'light'});
+// « Enregistrer les règles » : on choisit le vrai jour dans le calendrier
+let pickMode=null;
+function startPick(mode){pickMode=mode;document.body.classList.add('picking');
+  $('pickMsg').textContent=mode==='end'?'Touche le dernier jour de tes règles':'Touche le premier jour de tes règles';show('cal')}
+function endPick(){pickMode=null;document.body.classList.remove('picking')}
+$('quickPeriod').onclick=()=>startPick($('quickPeriod').dataset.mode==='end'?'end':'start');
+$('pickCancel').onclick=()=>{endPick();show('today')};
+function pickDay(k){
+  const t=iso(today());if(k>t){toast('Choisis un jour passé ou aujourd\'hui');return}
+  undoSnap=JSON.stringify(db.days);const n=+db.settings.period||7;const ps=periods();
+  if(pickMode==='end'){
+    const P=[...ps].reverse().find(x=>iso(x.start)<=k);
+    if(!P){toast('Aucunes règles avant ce jour');undoSnap=null;return}
+    for(let d=addDays(parse(k),1);d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
+    for(let d=P.start;iso(d)<=k;d=addDays(d,1))if(!isBleed(db.days[iso(d)]))setFlow(iso(d),'light');
+    toast('Fin des règles le '+fmt(parse(k),{day:'numeric',month:'long'}));
   }else{
-    for(let i=0;i<avgP;i++){const d=iso(addDays(t,i));const e=db.days[d]||{sym:[],mood:[],note:''};if(!isBleed(e))e.flow=i<2?'medium':'light';db.days[d]=e}
+    // règles déjà notées qui chevauchent ou commencent juste après : on les remplace
+    ps.filter(x=>iso(x.end)>=k&&diff(parse(k),x.start)<=n).forEach(x=>{for(let d=x.start;d<=x.end;d=addDays(d,1))setFlow(iso(d),'')});
+    for(let i=0;i<n;i++){const d=iso(addDays(parse(k),i));setFlow(d,i<3?'medium':'light')}
+    toast('Règles notées à partir du '+fmt(parse(k),{day:'numeric',month:'long'})+' · prévisions mises à jour');
   }
-  save();renderAll();
-};
+  save();endPick();renderAll();setTimeout(()=>show('today'),350);
+}
 
 // ---------- réglages ----------
 document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{
@@ -552,7 +573,7 @@ $('importFile').onchange=()=>{const f=$('importFile').files[0];if(!f)return;cons
 $('resetBtn').onclick=()=>{if(confirm('Effacer toutes tes données ? Pense à exporter avant.')&&confirm('Vraiment tout effacer ?')){db={days:{},settings:{cycle:28,period:7},lastBackup:null};save();renderAll()}};
 
 // ---------- onglets ----------
-function show(v){document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
+function show(v){if(v!=='cal'&&pickMode)endPick();document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.v===v));
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));window.scrollTo(0,0);if(v==='cal')requestAnimationFrame(()=>scrollToToday(false));if(v==='today')requestAnimationFrame(()=>placeWeek())}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('goSet').onclick=()=>show('set');
