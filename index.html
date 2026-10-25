@@ -358,8 +358,25 @@ function predictions(n=4){
   });
   return{per,fert,ovu,next,fertStart};
 }
+// Règles en cours (« ouvertes ») : les jours passent en rose plein au fil des jours,
+// les jours à venir restent en pointillés. Sans action pendant 8 jours, la durée par défaut est validée.
+const N=()=>+db.settings.period||7;
+function openFuture(k){if(!db.open)return false;const s=parse(db.open.start);return k>iso(today())&&k<=iso(addDays(s,N()-1))}
+function syncOpen(){
+  const t=today(),tk=iso(t);
+  // ancienne version : jours de règles notés dans le futur -> règles ouvertes
+  if(!db.open){const fut=Object.keys(db.days).filter(k=>k>tk&&isBleed(db.days[k]));
+    if(fut.length){const P=periods().find(x=>iso(x.end)>tk);if(P&&iso(P.start)<=tk)db.open={start:iso(P.start)};fut.forEach(k=>setFlow(k,''))}}
+  if(!db.open)return;
+  const s=parse(db.open.start),n=N();
+  const P=periods().find(x=>iso(x.start)===db.open.start);
+  if(!P){db.open=null;return} // règles retirées
+  const lim=addDays(s,n-1),upto=t<lim?t:lim;
+  for(let d=s;d<=upto;d=addDays(d,1)){const k=iso(d);if(!isBleed(db.days[k]))setFlow(k,diff(s,d)<3?'medium':'light')}
+  if(diff(s,t)>=8)db.open=null; // validé avec la durée par défaut
+}
 function cls(k,pr,t){const e=db.days[k];
-  if(isBleed(e))return'period';if(k>t&&pr.per.has(k))return'pred';if(pr.ovu.has(k))return'ovu';if(pr.fert.has(k))return'fertile';return''}
+  if(isBleed(e))return'period';if(k>t&&openFuture(k))return'pred';if(k>t&&pr.per.has(k))return'pred';if(pr.ovu.has(k))return'ovu';if(pr.fert.has(k))return'fertile';return''}
 
 // ---------- accueil ----------
 const WEEKS=12;let weekIdx=WEEKS;
@@ -387,7 +404,7 @@ function renderToday(){
     const last=p[p.length-1],day=diff(last.start,t)+1;
     const inPeriod=diff(last.end,t)<=0||isBleed(db.days[tk]);
     if(inPeriod){ring.classList.add('period');$('ringKick').textContent='Règles';$('ringBig').textContent='Jour '+day;
-      $('ringLbl').textContent='Prévues jusqu\'au '+fmt(addDays(last.start,Math.max(avgP,diff(last.start,last.end)+1)-1),{day:'numeric',month:'long'});$('qpLabel').textContent='Fin des règles';qb.dataset.mode='end'}
+      $('ringLbl').textContent=db.open?'Prévues jusqu\'au '+fmt(addDays(parse(db.open.start),N()-1),{day:'numeric',month:'long'}):'Durée notée : '+(diff(last.start,last.end)+1)+' jours';$('qpLabel').textContent='Fin des règles';qb.dataset.mode='end'}
     else{
       const until=diff(t,pr.next);$('qpLabel').textContent='Enregistrer les règles';qb.dataset.mode='start';
       if(day>avgC+2){$('ringKick').textContent='Retard';$('ringBig').textContent=(day-avgC)+' j';$('ringLbl').textContent='Jour '+day+' du cycle'}
@@ -459,22 +476,26 @@ function bindDay(b,k){
 function blank(e){return !e.flow&&!(e.sym||[]).length&&!(e.mood||[]).length&&!e.note}
 function setFlow(k,f){const e=db.days[k]||{sym:[],mood:[],note:''};if(f)e.flow=f;else delete e.flow;if(blank(e))delete db.days[k];else db.days[k]=e}
 let undoSnap=null;
+function startPeriod(k){const n=N(),t=today(),s=parse(k);
+  if(diff(s,t)>=8){for(let i=0;i<n;i++)setFlow(iso(addDays(s,i)),i<3?'medium':'light');return false}
+  if(db.open&&db.open.start!==k)db.open=null;
+  db.open={start:k};syncOpen();return true}
+function closeOpenIf(P){if(db.open&&db.open.start===iso(P.start))db.open=null}
 function tapDay(k){
   const t=iso(today());
   if(k>t){toast('Tu pourras noter ce jour quand il sera arrivé');return}
-  undoSnap=JSON.stringify(db.days);
+  undoSnap=JSON.stringify({d:db.days,o:db.open||null});
   const P=periods().find(x=>iso(x.start)<=k&&k<=iso(x.end));
   if(P){
     if(k===iso(P.start)){ // premier jour : on retire ces règles
-      for(let d=P.start;d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
+      for(let d=P.start;d<=P.end;d=addDays(d,1))setFlow(iso(d),'');closeOpenIf(P);
       toast('Règles du '+fmt(P.start,{day:'numeric',month:'long'})+' retirées');
     }else{ // un autre jour : les règles finissent ce jour-là
-      for(let d=addDays(parse(k),1);d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
+      for(let d=addDays(parse(k),1);d<=P.end;d=addDays(d,1))setFlow(iso(d),'');closeOpenIf(P);
       toast('Fin des règles le '+fmt(parse(k),{day:'numeric',month:'long'}));
     }
   }else{
-    const n=+db.settings.period||7;
-    for(let i=0;i<n;i++){const d=iso(addDays(parse(k),i));if(!isBleed(db.days[d]))setFlow(d,i<3?'medium':'light')}
+    const n=N();startPeriod(k);
     toast('Règles du '+fmt(parse(k),{day:'numeric',month:'short'})+' au '+fmt(addDays(parse(k),n-1),{day:'numeric',month:'short'}));
   }
   save();renderAll();
@@ -501,7 +522,7 @@ function renderSet(){
   $('defCycle').textContent=db.settings.cycle;$('defPeriod').textContent=db.settings.period;
   $('lastBackup').textContent=db.lastBackup?'Dernier export : '+fmt(new Date(db.lastBackup),{day:'numeric',month:'long',year:'numeric'}):'Aucun export pour l\'instant';
 }
-function renderAll(){renderToday();renderCal();renderHist();renderSet()}
+function renderAll(){syncOpen();save();renderToday();renderCal();renderHist();renderSet()}
 
 // ---------- fiche jour ----------
 let cur=null,draft=null;
@@ -523,6 +544,7 @@ function openSheet(k){
 }
 function closeSheet(){$('veil').classList.remove('on');$('sheet').classList.remove('on')}
 $('saveDay').onclick=()=>{draft.note=$('note').value.trim();
+  if(db.open&&!isBleed(draft)&&isBleed(db.days[cur])&&cur>db.open.start){db.open=null;Object.keys(db.days).filter(k=>k>cur&&isBleed(db.days[k])&&k<=iso(addDays(parse(cur),15))).forEach(k=>setFlow(k,''))}
   if(!draft.flow&&!draft.sym.length&&!draft.mood.length&&!draft.note)delete db.days[cur];else db.days[cur]=draft;
   save();closeSheet();renderAll()};
 $('closeSheet').onclick=closeSheet;$('veil').onclick=closeSheet;
@@ -537,17 +559,18 @@ $('quickPeriod').onclick=()=>startPick($('quickPeriod').dataset.mode==='end'?'en
 $('pickCancel').onclick=()=>{endPick();show('today')};
 function pickDay(k){
   const t=iso(today());if(k>t){toast('Choisis un jour passé ou aujourd\'hui');return}
-  undoSnap=JSON.stringify(db.days);const n=+db.settings.period||7;const ps=periods();
+  undoSnap=JSON.stringify({d:db.days,o:db.open||null});const n=+db.settings.period||7;const ps=periods();
   if(pickMode==='end'){
     const P=[...ps].reverse().find(x=>iso(x.start)<=k);
     if(!P){toast('Aucunes règles avant ce jour');undoSnap=null;return}
     for(let d=addDays(parse(k),1);d<=P.end;d=addDays(d,1))setFlow(iso(d),'');
     for(let d=P.start;iso(d)<=k;d=addDays(d,1))if(!isBleed(db.days[iso(d)]))setFlow(iso(d),'light');
+    closeOpenIf(P);
     toast('Fin des règles le '+fmt(parse(k),{day:'numeric',month:'long'}));
   }else{
     // règles déjà notées qui chevauchent ou commencent juste après : on les remplace
     ps.filter(x=>iso(x.end)>=k&&diff(parse(k),x.start)<=n).forEach(x=>{for(let d=x.start;d<=x.end;d=addDays(d,1))setFlow(iso(d),'')});
-    for(let i=0;i<n;i++){const d=iso(addDays(parse(k),i));setFlow(d,i<3?'medium':'light')}
+    startPeriod(k);
     toast('Règles notées à partir du '+fmt(parse(k),{day:'numeric',month:'long'})+' · prévisions mises à jour');
   }
   save();endPick();renderAll();setTimeout(()=>show('today'),350);
@@ -582,7 +605,7 @@ $('week').addEventListener('scroll',()=>{const w=$('week');if(!w.clientWidth)ret
 $('todayTitle').onclick=()=>{weekIdx=WEEKS;placeWeek(true)};
 window.addEventListener('resize',()=>placeWeek());
 $('toToday').onclick=()=>scrollToToday(true);
-$('undoBtn').onclick=()=>{if(undoSnap){db.days=JSON.parse(undoSnap);undoSnap=null;save();renderAll()}$('toast').classList.remove('on')};
+$('undoBtn').onclick=()=>{if(undoSnap){{const u=JSON.parse(undoSnap);db.days=u.d;db.open=u.o}undoSnap=null;save();renderAll()}$('toast').classList.remove('on')};
 $('actSym').onclick=()=>openSheet(iso(today()));
 $('actMood').onclick=()=>{openSheet(iso(today()));setTimeout(()=>$('moodChips').parentNode.scrollIntoView({behavior:'smooth',block:'start'}),320)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAll()});
